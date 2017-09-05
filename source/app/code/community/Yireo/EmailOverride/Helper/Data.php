@@ -19,17 +19,38 @@ class Yireo_EmailOverride_Helper_Data extends Mage_Core_Helper_Abstract
      * @param string|integer|Mage_Core_Model_Store $store (optional)
      *
      * @return string|null
+     *
+     * Add paths priority mode to change fallback mode to check all the locale files in the (theme) directory instead of
+     * falling back through locale's first. This function is also used for csv files, that's why we are checking for the
+     * html extension.
      */
     public function getLocaleOverrideFile($localeCode, $fileName, $store = null)
     {
+        $pathsPriorityFallback = false;
+        $fileExtension = substr($fileName, strpos($fileName, ".") + 1);
+        if ($fileExtension == 'html') {
+            $pathsPriorityFallback = true;
+        }
+
         $paths = $this->getLocalePaths($store);
         $localeCodes = $this->getLocaleCodesAsArray($localeCode);
 
-        foreach ($localeCodes as $localeCode) {
+        if ($pathsPriorityFallback) {
             foreach ($paths as $path) {
-                $filePath = $path . DS . $localeCode . DS . $fileName;
-                if (!empty($filePath) && file_exists($filePath)) {
-                    return $filePath;
+                foreach ($localeCodes as $localeCode) {
+                    $filePath = $path . DS . $localeCode . DS . $fileName;
+                    if (!empty($filePath) && file_exists($filePath)) {
+                        return $filePath;
+                    }
+                }
+            }
+        } else {
+            foreach ($localeCodes as $localeCode) {
+                foreach ($paths as $path) {
+                    $filePath = $path . DS . $localeCode . DS . $fileName;
+                    if (!empty($filePath) && file_exists($filePath)) {
+                        return $filePath;
+                    }
                 }
             }
         }
